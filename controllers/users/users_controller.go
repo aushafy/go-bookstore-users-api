@@ -11,6 +11,7 @@ import (
 )
 
 func CreateUser(c *gin.Context) {
+
 	// logging with logrush with JSON formatter
 	log.SetFormatter(&log.JSONFormatter{})
 
@@ -29,18 +30,15 @@ func CreateUser(c *gin.Context) {
 
 	// alternative way to simplify above code, catch all user request as a JSON format without using ioutil.ReadAll and unmarshal it
 	if err := c.ShouldBindJSON(&user); err != nil {
-		restErr := errors.RestErr{
-			Message: "Invalid JSON Body",
-			Status:  http.StatusBadRequest,
-			Error:   "bad_request",
-		}
+		restErr := errors.NewBadRequestError("Invalid JSON Body")
 		c.JSON(restErr.Status, restErr)
 		return
 	}
 
-	result, err := services.CreateUser(user)
-	if err != nil {
-		log.Error(err)
+	result, saveErr := services.CreateUser(user)
+	if saveErr != nil {
+		c.JSON(saveErr.Status, saveErr)
+		return
 	}
 
 	c.JSON(http.StatusCreated, result)
